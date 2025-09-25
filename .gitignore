@@ -4,6 +4,17 @@ checkpoints/
 data/
 wandb/
 
+# Large model files
+pytorch_pi05_base/
+*.safetensors
+*.bin
+*.pt
+*.pth
+
+# Third party large files
+third_party/libero/
+third_party/aloha/
+
 # Byte-compiled / optimized / DLL files
 __pycache__/
 *.py[cod]

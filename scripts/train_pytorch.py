@@ -38,7 +38,7 @@ import torch
 import torch.distributed as dist
 import torch.nn.parallel
 import tqdm
-import wandb
+# import wandb  # Will be imported conditionally
 
 import openpi.models.pi0_config
 import openpi.models_pytorch.pi0_pytorch
@@ -72,6 +72,7 @@ def init_logging():
 def init_wandb(config: _config.TrainConfig, *, resuming: bool, enabled: bool = True):
     """Initialize wandb logging."""
     if not enabled:
+        import wandb
         wandb.init(mode="disabled")
         return
 
@@ -79,6 +80,7 @@ def init_wandb(config: _config.TrainConfig, *, resuming: bool, enabled: bool = T
     if not ckpt_dir.exists():
         raise FileNotFoundError(f"Checkpoint directory {ckpt_dir} does not exist.")
 
+    import wandb
     if resuming:
         run_id = (ckpt_dir / "wandb_id.txt").read_text().strip()
         wandb.init(id=run_id, resume="must", project=config.project_name)
@@ -191,6 +193,7 @@ def save_checkpoint(model, optimizer, global_step, config, is_main, data_config)
 
         # Log checkpoint to wandb
         if config.wandb_enabled:
+            import wandb
             wandb.log({"checkpoint_step": global_step}, step=global_step)
 
 
@@ -377,8 +380,10 @@ def train_loop(config: _config.TrainConfig):
             # Convert from NCHW to NHWC format for wandb
             img_concatenated = torch.cat([img[i].permute(1, 2, 0) for img in sample_batch["image"].values()], axis=1)
             img_concatenated = img_concatenated.cpu().numpy()
+            import wandb
             images_to_log.append(wandb.Image(img_concatenated))
 
+        import wandb
         wandb.log({"camera_views": images_to_log}, step=0)
 
         # Clear sample batch from memory aggressively
@@ -587,6 +592,7 @@ def train_loop(config: _config.TrainConfig):
 
                 # Log to wandb
                 if config.wandb_enabled and len(infos) > 0:
+                    import wandb
                     log_payload = {
                         "loss": avg_loss,
                         "learning_rate": avg_lr,
@@ -617,6 +623,7 @@ def train_loop(config: _config.TrainConfig):
 
     # Finish wandb run
     if is_main and config.wandb_enabled:
+        import wandb
         wandb.finish()
 
     cleanup_ddp()
