@@ -1,11 +1,10 @@
 import dataclasses
-
 import einops
 import numpy as np
 
 from openpi import transforms
 from openpi.models import model as _model
-
+print("libero_policy called")
 
 def make_libero_example() -> dict:
     """Creates a random input example for the Libero policy."""
@@ -79,6 +78,20 @@ class LiberoInputs(transforms.DataTransformFn):
         # stored in "prompt"; the output dict always needs to have the key "prompt").
         if "prompt" in data:
             inputs["prompt"] = data["prompt"]
+        # # >>> 在这里加保存逻辑 <<<
+        # import logging
+        # logging.warning("DEBUG infer called, obs keys=%s", list(obs.keys()))
+        # import logging, time, pathlib, numpy as np, cv2
+        # save_dir = pathlib.Path(__file__).resolve().parents[3] / "debug_inputs"
+        # save_dir.mkdir(parents=True, exist_ok=True)
+        # ts = int(time.time() * 1000)
+        # cv2.imwrite(str(save_dir / f"{ts}_base.png"), base_image)
+        # cv2.imwrite(str(save_dir / f"{ts}_wrist.png"), wrist_image)
+        # np.save(save_dir / f"{ts}_state.npy", data["observation/state"])
+        # if "prompt" in data:
+        #     (save_dir / f"{ts}_prompt.txt").write_text(data["prompt"])
+
+        # logging.warning(">>> DEBUG: saved LiberoInputs at %s", ts)
 
         return inputs
 

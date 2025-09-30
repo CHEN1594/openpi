@@ -1,3 +1,4 @@
+
 from collections.abc import Sequence
 import logging
 import pathlib
@@ -19,6 +20,8 @@ from openpi.shared import array_typing as at
 from openpi.shared import nnx_utils
 
 BasePolicy: TypeAlias = _base_policy.BasePolicy
+
+print("policy called")
 
 
 class Policy(BasePolicy):
@@ -66,9 +69,40 @@ class Policy(BasePolicy):
 
     @override
     def infer(self, obs: dict, *, noise: np.ndarray | None = None) -> dict:  # type: ignore[misc]
+        print(">>> DEBUG: infer() called")
+        # import logging, time, pathlib, numpy as np, cv2
+        # logging.warning(">>> DEBUG infer CALLED at %s, obs keys=%s",
+        #                 time.time(), list(obs.keys()))
+
         # Make a copy since transformations may modify the inputs in place.
         inputs = jax.tree.map(lambda x: x, obs)
         inputs = self._input_transform(inputs)
+        # ========== Debug 保存输入 ==========
+        import pathlib, cv2, numpy as np
+
+        # 根目录 debug_inputs
+        save_dir = pathlib.Path(__file__).resolve().parents[3] / "debug_inputs"
+        save_dir.mkdir(parents=True, exist_ok=True)
+
+        # 用 step 累计编号，避免覆盖
+        if not hasattr(self, "_debug_step"):
+            self._debug_step = 0
+        self._debug_step += 1
+        step_dir = save_dir / f"step_{self._debug_step:06d}"
+        step_dir.mkdir(parents=True, exist_ok=True)
+
+        # 保存状态
+        np.save(step_dir / "state.npy", np.array(inputs["state"]))
+
+        # 保存图像
+        for cam, img in inputs["image"].items():
+            cv2.imwrite(str(step_dir / f"{cam}.png"), img[:, :, ::-1])  # RGB→BGR
+
+        # 保存 prompt
+        if "prompt" in inputs:
+            (step_dir / "prompt.txt").write_text(str(inputs["prompt"]))
+        # ====================================
+
         if not self._is_pytorch_model:
             # Make a batch and convert to jax.Array.
             inputs = jax.tree.map(lambda x: jnp.asarray(x)[np.newaxis, ...], inputs)
